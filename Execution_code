@@ -1,0 +1,62 @@
+import cv2
+import numpy as np
+from openpyxl import Workbook
+
+# Initialize Excel workbook and sheet
+wb = Workbook()
+sheet = wb.active
+sheet.append(["Student", "Cheating", "Not Cheating"])
+
+# List of student names
+student_names = ["Alice", "Bob", "Charlie", "David", "Eve", "Frank", "Grace", "Hannah", "Isaac", "Jane", "Kevin", "Lily", "Mike", "Nancy", "Oliver"]
+
+# Load the video
+video_path = '/path/to/your/video.mp4'  # Update this path to your video file
+cap = cv2.VideoCapture(video_path)
+
+# Initialize variables
+frame_count = 0
+cheating_count = 0
+is_cheating = False
+
+# Main loop to process each frame
+while cap.isOpened():
+    ret, frame = cap.read()
+    if not ret:
+        break
+
+    # Processing frame here (e.g., object detection, motion detection, etc.)
+    # For simplicity, let's just consider a basic example of frame difference
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    if frame_count > 0:
+        frame_diff = cv2.absdiff(prev_gray, gray)
+        _, thresh = cv2.threshold(frame_diff, 30, 255, cv2.THRESH_BINARY)
+        cheating_pixels = np.count_nonzero(thresh)
+        if cheating_pixels > 5000:  # Adjust this threshold based on your requirements
+            is_cheating = True
+            cheating_count += 1
+        else:
+            is_cheating = False
+
+    # Store current frame as previous frame for next iteration
+    prev_gray = gray.copy()
+    frame_count += 1
+
+    # If cheating is detected, print the result
+    if frame_count <= 15:
+        student_name = student_names[frame_count - 1]
+        if is_cheating:
+            print(f"{student_name}: Cheating detected!")
+            sheet.append([student_name, "Yes"])
+        else:
+            sheet.append([student_name, "No"])
+
+# Save the Excel sheet
+excel_file = 'cheating_detection_results.xlsx'
+wb.save(excel_file)
+
+# Release the video capture and close the workbook
+cap.release()
+wb.close()
+
+print(f"Cheating detection results saved to {excel_file}")
